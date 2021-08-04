@@ -11,38 +11,51 @@ import napari
 import glob
 import os
 import sys
+import json
 from pathlib import Path
 from scipy import spatial
 import itertools
 from napari.qt.threading import thread_worker
+import matplotlib.pyplot  as plt
+from matplotlib.backends.backend_qt5agg import \
+    FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QPushButton, QSlider
 import h5py
 import cv2
+import pandas as pd
 import imageio
+from dask.array.image import imread as daskread
 Boxname = 'ImageIDBox'
 EventBoxname = 'EventIDBox'
 
 
 class NEATViz(object):
 
-        def __init__(self, imagedir, savedir, fileextension = '*tif'):
+        def __init__(self, imagedir, savedir, categories_json, fileextension = '*tif'):
             
             
                self.imagedir = imagedir
                self.savedir = savedir
-               self.fileextenstion = fileextension
+               self.categories_json = categories_json
+               self.fileextension = fileextension
                Path(self.savedir).mkdir(exist_ok=True)
                self.viewer = napari.Viewer()
-               napari.run()
+               
+               self.load_json()
+               self.key_categories = self.load_json()
                self.showNapari()
+               
+        def load_json(self):
+            with open(self.categories_json, 'r') as f:
+                return json.load(f)        
         
         def showNapari(self):
                  
                  
-                 Raw_path = os.path.join(imagedir, self.fileextension)
+                 Raw_path = os.path.join(self.imagedir, self.fileextension)
                  X = glob.glob(Raw_path)
-                 self.savedir = savedir
                  Imageids = []
                  
                  for imagename in X:
@@ -75,15 +88,14 @@ class NEATViz(object):
                  self.viewer.window._qt_window.resizeDocks([dock_widget], [width], Qt.Horizontal)    
                  eventidbox.currentIndexChanged.connect(lambda eventid = eventidbox : EventViewer(
                          self.viewer,
-                         imread(imageidbox.currentText()),
+                         imageidbox.currentText(),
                          eventidbox.currentText(),
                          self.key_categories,
                          os.path.basename(os.path.splitext(imageidbox.currentText())[0]),
-                         savedir,
+                         self.savedir,
                          multiplot_widget,
                          ax,
-                         figure,
-                         yolo_v2,
+                         figure
                     
                 )
             )    
@@ -91,15 +103,14 @@ class NEATViz(object):
                  imageidbox.currentIndexChanged.connect(
                  lambda trackid = imageidbox: EventViewer(
                          self.viewer,
-                         imread(imageidbox.currentText()),
+                         imageidbox.currentText(),
                          eventidbox.currentText(),
                          self.key_categories,
                          os.path.basename(os.path.splitext(imageidbox.currentText())[0]),
-                         savedir,
+                         self.savedir,
                          multiplot_widget,
                          ax,
-                         figure,
-                         yolo_v2,
+                         figure
                     
                 )
             )            
@@ -111,11 +122,11 @@ class NEATViz(object):
                  
 class EventViewer(object):
     
-    def __init__(self, viewer, image, event_name, key_categories, imagename, savedir, canvas, ax, figure):
+    def __init__(self, viewer, image_toread, event_name, key_categories, imagename, savedir, canvas, ax, figure):
         
         
            self.viewer = viewer
-           self.image = image
+           self.image = daskread(image_toread)
            self.event_name = event_name
            self.imagename = imagename
            self.canvas = canvas
@@ -130,16 +141,18 @@ class EventViewer(object):
         self.ax.cla()
         
         for (event_name,event_label) in self.key_categories.items():
+                        
                         if event_label > 0 and self.event_name == event_name:
                              csvname = self.savedir + "/" + event_name + "Location" + (os.path.splitext(os.path.basename(self.imagename))[0] + '.csv')
-                             event_locations, size_locations, angle_locations, line_locations, timelist, eventlist = self.event_counter(csvname)
+                             event_locations, size_locations, timelist, eventlist = self.event_counter(csvname)
                              
                              for layer in list(self.viewer.layers):
                                      if event_name in layer.name or layer.name in event_name or event_name + 'angle' in layer.name or layer.name in event_name + 'angle' :
                                             self.viewer.layers.remove(layer)
                                      if 'Image' in layer.name or layer.name in 'Image':
                                             self.viewer.layers.remove(layer)  
-                             self.viewer.add_image(self.image, name='Image')               
+                                            
+                             self.viewer.add_image(self.image, name=self.imagename )               
                              self.viewer.add_points(np.asarray(event_locations), size = size_locations ,name = event_name, face_color = [0]*4, edge_color = "red", edge_width = 1)
                              
                              
@@ -154,8 +167,13 @@ class EventViewer(object):
                              
     def event_counter(self, csv_file):
      
-         time,y,x,score,size,confidence,_  = np.loadtxt(csv_file, delimiter = ',', skiprows = 1, unpack=True)
-         
+         data   = pd.read_csv(csv_file, delimiter = ',')
+         time = data["T"]
+         y = data["Y"]
+         x = data["X"]
+         score = data["Score"]
+         size = data["Size"]
+         confidence = data["Confidence"] 
          eventcounter = 0
          eventlist = []
          timelist = []   
@@ -166,7 +184,6 @@ class EventViewer(object):
          
          event_locations = []
          size_locations = []
-         line_locations = []
          for i in range(len(listtime)):
              tcenter = int(listtime[i])
              ycenter = listy[i]
