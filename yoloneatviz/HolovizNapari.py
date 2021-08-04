@@ -88,7 +88,6 @@ class NEATViz(object):
                  self.viewer.window._qt_window.resizeDocks([dock_widget], [width], Qt.Horizontal)    
                  eventidbox.currentIndexChanged.connect(lambda eventid = eventidbox : EventViewer(
                          self.viewer,
-                         imageidbox.currentText(),
                          eventidbox.currentText(),
                          self.key_categories,
                          os.path.basename(os.path.splitext(imageidbox.currentText())[0]),
@@ -104,7 +103,6 @@ class NEATViz(object):
                  lambda trackid = imageidbox: EventViewer(
                          self.viewer,
                          imageidbox.currentText(),
-                         eventidbox.currentText(),
                          self.key_categories,
                          os.path.basename(os.path.splitext(imageidbox.currentText())[0]),
                          self.savedir,
@@ -115,65 +113,94 @@ class NEATViz(object):
                 )
             )            
                  
-                 
-                 self.viewer.window.add_dock_widget(eventidbox, name="Event", area='left')  
                  self.viewer.window.add_dock_widget(imageidbox, name="Image", area='left') 
+                 self.viewer.window.add_dock_widget(eventidbox, name="Event", area='left')  
                  
                  
+                                     
+      
+                             
+                             
+          
+
+
+
+                        
 class EventViewer(object):
     
-    def __init__(self, viewer, image_toread, event_name, key_categories, imagename, savedir, canvas, ax, figure):
+    def __init__(self, viewer, image_toread, key_categories, imagename, savedir, canvas, ax, figure):
         
-        
+           
            self.viewer = viewer
-           self.image = daskread(image_toread)
-           self.event_name = event_name
-           self.imagename = imagename
-           self.canvas = canvas
+           self.image_toread = image_toread
            self.key_categories = key_categories
+           self.imagename = imagename
            self.savedir = savedir
+           self.canvas = canvas
            self.ax = ax
            self.figure = figure
-           self.plot()
-    
-    def plot(self):
+           self.time = int(self.viewer.dims.point[0])
+           image = daskread(self.image_toread)
+           self.viewer.add_image(image, name= 'Image' + self.imagename )
+           
+           self.viewer.dims.events.current_step.connect(self.image_add)
+    def image_add(self, event):
+                            
+        print('in')
+        self.time = int(self.viewer.dims.point[0])
         
-        self.ax.cla()
+        print(self.time)
         
+        for layer in list(self.viewer.layers):
+                                 if 'Image' in layer.name or layer.name in 'Image':
+                                            self.viewer.layers.remove(layer)
+                                            
+                                            
+        
+                                    
         for (event_name,event_label) in self.key_categories.items():
                         
                         if event_label > 0 and self.event_name == event_name:
-                             csvname = self.savedir + "/" + event_name + "Location" + (os.path.splitext(os.path.basename(self.imagename))[0] + '.csv')
-                             event_locations, size_locations, timelist, eventlist = self.event_counter(csvname)
-                             
+        
                              for layer in list(self.viewer.layers):
-                                     if event_name in layer.name or layer.name in event_name or event_name + 'angle' in layer.name or layer.name in event_name + 'angle' :
-                                            self.viewer.layers.remove(layer)
-                                     if 'Image' in layer.name or layer.name in 'Image':
-                                            self.viewer.layers.remove(layer)  
-                                            
-                             self.viewer.add_image(self.image, name=self.imagename )               
-                             self.viewer.add_points(np.asarray(event_locations), size = size_locations ,name = event_name, face_color = [0]*4, edge_color = "red", edge_width = 1)
+                                  
+                                 if event_name in layer.name or layer.name in event_name or event_name + 'angle' in layer.name or layer.name in event_name + 'angle' :
+                                            self.viewer.layers.remove(layer)           
+                               
+                             
+                             csvname = self.savedir + "/" + event_name + "Location" + (os.path.splitext(os.path.basename(self.imagename))[0] + '.csv')    
+                             #event_locations, size_locations, timelist, eventlist = self.event_counter(csvname)
+                             
+                             #self.viewer.add_points(np.asarray(event_locations), size = size_locations ,name = event_name, face_color = [0]*4, edge_color = "red", edge_width = 1)
                              
                              
-                             self.viewer.theme = 'light'
-                             self.ax.plot(timelist, eventlist, '-r')
-                             self.ax.set_title(event_name + "Events")
-                             self.ax.set_xlabel("Time")
-                             self.ax.set_ylabel("Counts")
-                             self.figure.canvas.draw()
-                             self.figure.canvas.flush_events()
-                             plt.savefig(self.savedir  + event_name   + '.png') 
+                             
+                                      
+                             
+                             #self.viewer.theme = 'light'
+                             #self.ax.plot(timelist, eventlist, '-r')
+                             #self.ax.set_title(event_name + "Events")
+                             #self.ax.set_xlabel("Time")
+                             #self.ax.set_ylabel("Counts")
+                             #self.figure.canvas.draw()
+                             #self.figure.canvas.flush_events()
+                             #plt.savefig(self.savedir  + event_name   + '.png')
+
                              
     def event_counter(self, csv_file):
      
          data   = pd.read_csv(csv_file, delimiter = ',')
+         print(data(data["T"] == self.time))
          time = data["T"]
          y = data["Y"]
          x = data["X"]
          score = data["Score"]
          size = data["Size"]
          confidence = data["Confidence"] 
+         
+         
+         
+         
          eventcounter = 0
          eventlist = []
          timelist = []   
@@ -181,15 +208,15 @@ class EventViewer(object):
          listy = y.tolist()
          listx = x.tolist()
          listsize = size.tolist()
-         
+         listscore = score.tolist()
          event_locations = []
          size_locations = []
-         for i in range(len(listtime)):
+         for i in (range(len(listtime))):
              tcenter = int(listtime[i])
              ycenter = listy[i]
              xcenter = listx[i]
              size = listsize[i]
-             
+             print(tcenter)
              eventcounter = listtime.count(tcenter)
              timelist.append(tcenter)
              eventlist.append(eventcounter)
@@ -198,4 +225,4 @@ class EventViewer(object):
              
              
             
-         return event_locations, size_locations, timelist, eventlist                         
+         return event_locations, size_locations, timelist, eventlist                    
