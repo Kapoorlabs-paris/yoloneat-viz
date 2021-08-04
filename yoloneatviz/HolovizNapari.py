@@ -11,7 +11,7 @@ import napari
 import glob
 import os
 import sys
-import Path
+from pathlib import Path
 from scipy import spatial
 import itertools
 from napari.qt.threading import thread_worker
@@ -35,6 +35,7 @@ class NEATViz(object):
                Path(self.savedir).mkdir(exist_ok=True)
                self.viewer = napari.Viewer()
                napari.run()
+               self.showNapari()
         
         def showNapari(self):
                  
