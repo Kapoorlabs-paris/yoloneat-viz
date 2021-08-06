@@ -137,23 +137,24 @@ class NEATViz(object):
             self.dataset   = pd.read_csv(self.csvname, delimiter = ',')
             self.ax.cla()
             #Data is written as T, Y, X, Score, Size, Confidence
-            self.T = self.dataset[self.dataset.keys()[0]][1:].astype('int16')
+            self.T = self.dataset[self.dataset.keys()[0]][1:]
+            self.T = np.round(self.dataset["T"]).astype('int')
             self.Y = self.dataset[self.dataset.keys()[1]][1:]
             self.X = self.dataset[self.dataset.keys()[2]][1:]
             self.Score = self.dataset[self.dataset.keys()[3]][1:]
             self.Size = self.dataset[self.dataset.keys()[4]][1:]
             self.Confidence = self.dataset[self.dataset.keys()[5]][1:]
             
-           
+            
             timelist = []
             eventlist= []
-            for i in range(1, self.image.shape[0]):
+            for i in range(0, self.image.shape[0]):
                 
-                condition = self.dataset["T"] == i
+                currentT   = np.round(self.dataset["T"]).astype('int')
+                condition = currentT == i
                 countT = len(self.T[condition])
                 timelist.append(i)
                 eventlist.append(countT)
-            
             self.ax.plot(timelist, eventlist, '-r')
             self.ax.set_title(self.event_name + "Events")
             self.ax.set_xlabel("Time")
@@ -182,8 +183,8 @@ class NEATViz(object):
         def update_slider(self, event):
                   
                         self.time = int(self.viewer.dims.point[0])        
-                       
-                        condition = self.dataset["T"] == self.time
+                        currentT   = np.round(self.dataset["T"]).astype('int')
+                        condition = currentT == self.time
                         limitT = self.T[condition]
                         limitX = self.X[condition]
                         limitY = self.Y[condition]
@@ -208,9 +209,8 @@ class NEATViz(object):
                              event_locations.append([tcenter, ycenter, xcenter])   
                              size_locations.append(size)
                              score_locations.append(score)
-                        print(score_locations)     
+                             
                         point_properties = {'score' : np.array(score_locations)}    
-                        print(point_properties)
                         for layer in list(self.viewer.layers):
                                           
                                          if 'Detections'  in layer.name or layer.name in 'Detections' :
