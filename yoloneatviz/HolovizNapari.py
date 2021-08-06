@@ -11,6 +11,7 @@ import napari
 import glob
 import os
 import sys
+import numpy as np
 import json
 from pathlib import Path
 from scipy import spatial
@@ -127,7 +128,7 @@ class NEATViz(object):
                                      
                                      for layer in list(self.viewer.layers):
                                           
-                                         if event_name in layer.name or layer.name in event_name or event_name + 'angle' in layer.name or layer.name in event_name + 'angle' :
+                                         if 'Detections'  in layer.name or layer.name in 'Detections' :
                                                     self.viewer.layers.remove(layer)           
                                        
                                      
@@ -181,7 +182,6 @@ class NEATViz(object):
         def update_slider(self, event):
                   
                         self.time = int(self.viewer.dims.point[0])        
-                        print('loop', self.time)    
                        
                         condition = self.dataset["T"] == self.time
                         limitT = self.T[condition]
@@ -208,8 +208,12 @@ class NEATViz(object):
                              event_locations.append([tcenter, ycenter, xcenter])   
                              size_locations.append(size)
                              score_locations.append(score)
+                        print(score_locations)     
+                        point_properties = {'score' : np.array(score_locations)}    
+                        print(point_properties)
                         for layer in list(self.viewer.layers):
                                           
-                                         if self.event_name in layer.name or layer.name in self.event_name or self.event_name + 'angle' in layer.name or layer.name in self.event_name + 'angle' :
+                                         if 'Detections'  in layer.name or layer.name in 'Detections' :
                                                     self.viewer.layers.remove(layer) 
-                        self.viewer.add_points(event_locations, size = size_locations , name = self.event_name, face_color = [0]*4, edge_color = "red", edge_width = 1) 
+                        if len(score_locations) > 0:                             
+                               self.viewer.add_points(event_locations, size = size_locations , properties = point_properties, name = 'Detections' + self.event_name, face_color = 'score', edge_color = "red", edge_width = 1) 
