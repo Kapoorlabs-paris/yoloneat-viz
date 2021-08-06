@@ -133,29 +133,23 @@ class NEATViz(object):
                                      
                                      self.csvname = self.savedir + "/" + event_name + "Location" + (os.path.splitext(os.path.basename(imagename))[0] + '.csv')
                                      
-            dataset   = pd.read_csv(self.csvname, delimiter = ',')
+            self.dataset   = pd.read_csv(self.csvname, delimiter = ',')
             self.ax.cla()
             #Data is written as T, Y, X, Score, Size, Confidence
-            T = dataset[dataset.keys()[0]][1:].astype('int16')
-            Y = dataset[dataset.keys()[1]][1:]
-            X = dataset[dataset.keys()[2]][1:]
-            Score = dataset[dataset.keys()[3]][1:]
-            Size = dataset[dataset.keys()[4]][1:]
-            Confidence = dataset[dataset.keys()[5]][1:]
+            self.T = self.dataset[self.dataset.keys()[0]][1:].astype('int16')
+            self.Y = self.dataset[self.dataset.keys()[1]][1:]
+            self.X = self.dataset[self.dataset.keys()[2]][1:]
+            self.Score = self.dataset[self.dataset.keys()[3]][1:]
+            self.Size = self.dataset[self.dataset.keys()[4]][1:]
+            self.Confidence = self.dataset[self.dataset.keys()[5]][1:]
             
-            condition = dataset["T"] == self.time
-            limitT = T[condition]
-            limitX = X[condition]
-            limitY = Y[condition]
-            limitScore = Score[condition]
-            limitSize = Size[condition]
-            limitConfidence = Confidence[condition]
+           
             timelist = []
             eventlist= []
             for i in range(1, self.image.shape[0]):
                 
-                condition = dataset["T"] == i
-                countT = len(T[condition])
+                condition = self.dataset["T"] == i
+                countT = len(self.T[condition])
                 timelist.append(i)
                 eventlist.append(countT)
             
@@ -187,6 +181,35 @@ class NEATViz(object):
         def update_slider(self, event):
                   
                         self.time = int(self.viewer.dims.point[0])        
-                        print('loop', self.time)           
+                        print('loop', self.time)    
+                       
+                        condition = self.dataset["T"] == self.time
+                        limitT = self.T[condition]
+                        limitX = self.X[condition]
+                        limitY = self.Y[condition]
+                        limitScore = self.Score[condition]
+                        limitSize = self.Size[condition]
+                        limitConfidence = self.Confidence[condition]
                         
-                                    
+                        listtime = limitT.tolist()
+                        listy = limitY.tolist()
+                        listx = limitX.tolist()
+                        listsize = limitSize.tolist()
+                        listscore = limitScore.tolist()
+                        event_locations = []
+                        size_locations = []
+                        score_locations = []
+                        for i in (range(len(listtime))):
+                             tcenter = int(listtime[i])
+                             ycenter = listy[i]
+                             xcenter = listx[i]
+                             size = listsize[i]
+                             score = listscore[i]
+                             event_locations.append([tcenter, ycenter, xcenter])   
+                             size_locations.append(size)
+                             score_locations.append(score)
+                        for layer in list(self.viewer.layers):
+                                          
+                                         if self.event_name in layer.name or layer.name in self.event_name or self.event_name + 'angle' in layer.name or layer.name in self.event_name + 'angle' :
+                                                    self.viewer.layers.remove(layer) 
+                        self.viewer.add_points(event_locations, size = size_locations , name = self.event_name, face_color = [0]*4, edge_color = "red", edge_width = 1) 
