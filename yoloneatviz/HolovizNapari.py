@@ -133,6 +133,39 @@ class NEATViz(object):
                                      
                                      self.csvname = self.savedir + "/" + event_name + "Location" + (os.path.splitext(os.path.basename(imagename))[0] + '.csv')
                                      
+            dataset   = pd.read_csv(self.csvname, delimiter = ',')
+            self.ax.cla()
+            #Data is written as T, Y, X, Score, Size, Confidence
+            T = dataset[dataset.keys()[0]][1:].astype('int16')
+            Y = dataset[dataset.keys()[1]][1:]
+            X = dataset[dataset.keys()[2]][1:]
+            Score = dataset[dataset.keys()[3]][1:]
+            Size = dataset[dataset.keys()[4]][1:]
+            Confidence = dataset[dataset.keys()[5]][1:]
+            
+            condition = dataset["T"] == self.time
+            limitT = T[condition]
+            limitX = X[condition]
+            limitY = Y[condition]
+            limitScore = Score[condition]
+            limitSize = Size[condition]
+            limitConfidence = Confidence[condition]
+            timelist = []
+            eventlist= []
+            for i in range(1, self.image.shape[0]):
+                
+                condition = dataset["T"] == i
+                countT = len(T[condition])
+                timelist.append(i)
+                eventlist.append(countT)
+            
+            self.ax.plot(timelist, eventlist, '-r')
+            self.ax.set_title(self.event_name + "Events")
+            self.ax.set_xlabel("Time")
+            self.ax.set_ylabel("Counts")
+            self.figure.canvas.draw()
+            self.figure.canvas.flush_events()
+            plt.savefig(self.savedir  + self.event_name   + '.png')                         
             self.viewer.dims.events.current_step.connect(self.update_slider)
                                         
                                      
@@ -143,10 +176,10 @@ class NEATViz(object):
                 for layer in list(self.viewer.layers):
                                          if 'Image' in layer.name or layer.name in 'Image':
                                                     self.viewer.layers.remove(layer)
-                image = daskread(image_toread)
-                if len(image.shape) > 3:
-                    image = image[0,:]
-                self.viewer.add_image(image, name= 'Image' + imagename )
+                self.image = daskread(image_toread)
+                if len(self.image.shape) > 3:
+                    self.image = self.image[0,:]
+                self.viewer.add_image(self.image, name= 'Image' + imagename )
                 
                                                     
                 
@@ -155,42 +188,5 @@ class NEATViz(object):
                   
                         self.time = int(self.viewer.dims.point[0])        
                         print('loop', self.time)           
-                        dataset   = pd.read_csv(self.csvname, delimiter = ',')
-                        #Data is written as T, Y, X, Score, Size, Confidence
-                        T = dataset[dataset.keys()[0]][1:].astype('int16')
-                        Y = dataset[dataset.keys()[1]][1:]
-                        X = dataset[dataset.keys()[2]][1:]
-                        Score = dataset[dataset.keys()[3]][1:]
-                        Size = dataset[dataset.keys()[4]][1:]
-                        Confidence = dataset[dataset.keys()[5]][1:]
-                        eventcounter = 0
-                        eventlist = []
-                        timelist = []   
-                        listtime = T.tolist()
-                        listy = Y.tolist()
-                        listx = X.tolist()
-                        listsize = Size.tolist()
-                        listscore = Score.tolist()
-                        event_locations = []
-                        size_locations = []
-                        for i in (range(len(listtime))):
-                             tcenter = int(listtime[i])
-                             ycenter = listy[i]
-                             xcenter = listx[i]
-                             size = listsize[i]
-                             eventcounter = listtime.count(tcenter)
-                             timelist.append(tcenter)
-                             eventlist.append(eventcounter)
-                             event_locations.append([tcenter, ycenter, xcenter])   
-                             size_locations.append(size)
-                                   
-                        self.ax.plot(timelist, eventlist, '-r')
-                        self.ax.set_title(self.event_name + "Events")
-                        self.ax.set_xlabel("Time")
-                        self.ax.set_ylabel("Counts")
-                        self.figure.canvas.draw()
-                        self.figure.canvas.flush_events()
-
-                        self.viewer.add_points(np.asarray(event_locations), size = size_locations ,name = self.event_name , face_color = [0]*4, edge_color = "red", edge_width = 1)
-                 
+                        
                                     
