@@ -138,7 +138,7 @@ class NEATViz(object):
             self.ax.cla()
             #Data is written as T, Y, X, Score, Size, Confidence
             self.T = self.dataset[self.dataset.keys()[0]][1:]
-            self.T = np.round(self.dataset["T"]).astype('int')
+            self.T = np.round(self.dataset[self.dataset.keys()[0]]).astype('int')
             self.Y = self.dataset[self.dataset.keys()[1]][1:]
             self.X = self.dataset[self.dataset.keys()[2]][1:]
             self.Score = self.dataset[self.dataset.keys()[3]][1:]
@@ -161,9 +161,35 @@ class NEATViz(object):
             self.ax.set_ylabel("Counts")
             self.figure.canvas.draw()
             self.figure.canvas.flush_events()
-            plt.savefig(self.savedir  + self.event_name   + '.png')                         
-            self.viewer.dims.events.current_step.connect(self.update_slider)
-                                        
+            plt.savefig(self.savedir  + self.event_name   + '.png')        
+
+            listtime = self.T.tolist()
+            listy = self.Y.tolist()
+            listx = self.X.tolist()
+            listsize = self.Size.tolist()
+            listscore = self.Score.tolist()
+            event_locations = []
+            size_locations = []
+            score_locations = []
+            for i in (range(len(listtime))):
+                 tcenter = int(listtime[i])
+                 ycenter = listy[i]
+                 xcenter = listx[i]
+                 size = listsize[i]
+                 score = listscore[i]
+                 event_locations.append([int(tcenter), int(ycenter), int(xcenter)])   
+                 size_locations.append(size)
+                 score_locations.append(score)
+            print(event_locations)     
+            point_properties = {'score' : np.array(score_locations)}    
+            for layer in list(self.viewer.layers):
+                              
+                             if 'Detections'  in layer.name or layer.name in 'Detections' :
+                                        self.viewer.layers.remove(layer) 
+            if len(score_locations) > 0:                             
+                   self.viewer.add_points(event_locations, size = size_locations , properties = point_properties, name = 'Detections' + self.event_name, face_color = 'score', edge_color = "red", edge_width = 1) 
+
+
                                      
                                         
             
@@ -180,40 +206,4 @@ class NEATViz(object):
                                                     
                 
                                             
-        def update_slider(self, event):
-                  
-                        self.time = int(self.viewer.dims.point[0])        
-                        currentT   = np.round(self.dataset["T"]).astype('int')
-                        condition = currentT == self.time
-                        limitT = self.T[condition]
-                        limitX = self.X[condition]
-                        limitY = self.Y[condition]
-                        limitScore = self.Score[condition]
-                        limitSize = self.Size[condition]
-                        limitConfidence = self.Confidence[condition]
-                        
-                        listtime = limitT.tolist()
-                        listy = limitY.tolist()
-                        listx = limitX.tolist()
-                        listsize = limitSize.tolist()
-                        listscore = limitScore.tolist()
-                        event_locations = []
-                        size_locations = []
-                        score_locations = []
-                        for i in (range(len(listtime))):
-                             tcenter = int(listtime[i])
-                             ycenter = listy[i]
-                             xcenter = listx[i]
-                             size = listsize[i]
-                             score = listscore[i]
-                             event_locations.append([tcenter, ycenter, xcenter])   
-                             size_locations.append(size)
-                             score_locations.append(score)
-                             
-                        point_properties = {'score' : np.array(score_locations)}    
-                        for layer in list(self.viewer.layers):
-                                          
-                                         if 'Detections'  in layer.name or layer.name in 'Detections' :
-                                                    self.viewer.layers.remove(layer) 
-                        if len(score_locations) > 0:                             
-                               self.viewer.add_points(event_locations, size = size_locations , properties = point_properties, name = 'Detections' + self.event_name, face_color = 'score', edge_color = "red", edge_width = 1) 
+        
