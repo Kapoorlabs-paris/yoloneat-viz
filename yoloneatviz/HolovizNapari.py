@@ -53,7 +53,9 @@ class NEATViz(object):
                
         def load_json(self):
             with open(self.categories_json, 'r') as f:
-                return json.load(f)        
+                return json.load(f)      
+            
+            
         
         def showNapari(self):
                  
@@ -138,7 +140,6 @@ class NEATViz(object):
             self.ax.cla()
             #Data is written as T, Y, X, Score, Size, Confidence
             self.T = self.dataset[self.dataset.keys()[0]][1:]
-            self.T = np.round(self.dataset[self.dataset.keys()[0]]).astype('int')
             self.Y = self.dataset[self.dataset.keys()[1]][1:]
             self.X = self.dataset[self.dataset.keys()[2]][1:]
             self.Score = self.dataset[self.dataset.keys()[3]][1:]
@@ -172,7 +173,9 @@ class NEATViz(object):
             size_locations = []
             score_locations = []
             for i in (range(len(listtime))):
+                 
                  tcenter = int(listtime[i])
+                 
                  ycenter = listy[i]
                  xcenter = listx[i]
                  size = listsize[i]
@@ -205,5 +208,16 @@ class NEATViz(object):
                 
                                                     
                 
-                                            
-        
+                
+def GetMarkers(image):
+    
+    
+    MarkerImage = np.zeros(MarkerImage.shape)
+    waterproperties = measure.regionprops(image)                
+    Coordinates = [prop.centroid for prop in waterproperties]
+    Coordinates = sorted(Coordinates , key=lambda k: [k[0], k[1]]
+    MarkerImage[tuple(coordinates_int.T)] = 1 + np.arange(len(Coordinates))
+
+    markers = morphology.dilation(MarkerImage, morphology.disk(2))        
+   
+    return markers 
