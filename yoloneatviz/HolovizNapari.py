@@ -34,11 +34,12 @@ EventBoxname = 'EventIDBox'
 
 class NEATViz(object):
 
-        def __init__(self, imagedir, savedir, categories_json, fileextension = '*tif'):
+        def __init__(self, imagedir, savedir, categories_json, event_threshold, fileextension = '*tif'):
             
             
                self.imagedir = imagedir
                self.savedir = savedir
+               self.event_threshold = event_threshold
                self.categories_json = categories_json
                self.fileextension = fileextension
                Path(self.savedir).mkdir(exist_ok=True)
@@ -124,10 +125,11 @@ class NEATViz(object):
             
             
             self.event_name = csv_event_name
+            
             for (event_name,event_label) in self.key_categories.items():
                                 
                                 if event_label > 0 and csv_event_name == event_name:
-                                     
+                                     self.event_label = event_label                         
                                      for layer in list(self.viewer.layers):
                                           
                                          if 'Detections'  in layer.name or layer.name in 'Detections' :
@@ -137,6 +139,7 @@ class NEATViz(object):
                                      self.csvname = self.savedir + "/" + event_name + "Location" + (os.path.splitext(os.path.basename(imagename))[0] + '.csv')
                                      
             self.dataset   = pd.read_csv(self.csvname, delimiter = ',')
+            self.dataset_index = self.dataset.index
             self.ax.cla()
             #Data is written as T, Y, X, Score, Size, Confidence
             self.T = self.dataset[self.dataset.keys()[0]][1:]
@@ -152,8 +155,13 @@ class NEATViz(object):
             for i in range(0, self.image.shape[0]):
                 
                 currentT   = np.round(self.dataset["T"]).astype('int')
+                currentScore = self.dataset["Score"]
                 condition = currentT == i
-                countT = len(self.T[condition])
+                condition_indices = self.dataset_index[condition]
+                conditionScore = currentScore[condition_indices]
+                score_condition = conditionScore > self.event_threshold[self.event_label]
+                
+                countT = len(conditionScore[score_condition])
                 timelist.append(i)
                 eventlist.append(countT)
             self.ax.plot(timelist, eventlist, '-r')
@@ -180,9 +188,10 @@ class NEATViz(object):
                  xcenter = listx[i]
                  size = listsize[i]
                  score = listscore[i]
-                 event_locations.append([int(tcenter), int(ycenter), int(xcenter)])   
-                 size_locations.append(size)
-                 score_locations.append(score)
+                 if score > self.event_threshold[self.event_label]:
+                         event_locations.append([int(tcenter), int(ycenter), int(xcenter)])   
+                         size_locations.append(size)
+                         score_locations.append(score)
             point_properties = {'score' : np.array(score_locations)}    
             for layer in list(self.viewer.layers):
                               
