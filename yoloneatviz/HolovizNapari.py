@@ -183,14 +183,13 @@ class NEATViz(object):
                  event_locations.append([int(tcenter), int(ycenter), int(xcenter)])   
                  size_locations.append(size)
                  score_locations.append(score)
-            print(event_locations)     
             point_properties = {'score' : np.array(score_locations)}    
             for layer in list(self.viewer.layers):
                               
                              if 'Detections'  in layer.name or layer.name in 'Detections' :
                                         self.viewer.layers.remove(layer) 
             if len(score_locations) > 0:                             
-                   self.viewer.add_points(event_locations, size = size_locations , properties = point_properties, name = 'Detections' + self.event_name, face_color = 'score', edge_color = "red", edge_width = 1) 
+                   self.viewer.add_points(event_locations, size = size_locations , properties = point_properties, name = 'Detections' + self.event_name, face_color = [0]*4, edge_color = "red", edge_width = 1) 
 
 
                                      
@@ -215,7 +214,7 @@ def GetMarkers(image):
     MarkerImage = np.zeros(MarkerImage.shape)
     waterproperties = measure.regionprops(image)                
     Coordinates = [prop.centroid for prop in waterproperties]
-    Coordinates = sorted(Coordinates , key=lambda k: [k[0], k[1]]
+    Coordinates = sorted(Coordinates , key=lambda k: [k[0], k[1]])
     MarkerImage[tuple(coordinates_int.T)] = 1 + np.arange(len(Coordinates))
 
     markers = morphology.dilation(MarkerImage, morphology.disk(2))        
