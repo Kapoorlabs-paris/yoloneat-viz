@@ -214,7 +214,9 @@ class NEATViz(object):
                     self.image = self.image[0,:]
                 self.viewer.add_image(self.image, name= 'Image' + imagename )
                 
-                                                    
+
+    
+    
                 
                 
 def GetMarkers(image):

@@ -1,1 +1,1 @@
-from yoloneatviz.HolovizNapari import NEATViz 
+from yoloneatviz.HolovizNapari import NEATViz from yoloneatviz.Zmapgen import Zmapgen
