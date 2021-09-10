@@ -65,8 +65,8 @@ class Zmapgen(object):
                         count = count + 1
                         Signal_first = image[:,:,:,1]
                         Signal_second = image[:,:,:,2]
-                        Sum_signal_first = gaussian_filter(np.sum(Signal_first, axis = 0), radius)
-                        Sum_signal_second = gaussian_filter(np.sum(Signal_second, axis = 0) , radius)
+                        Sum_signal_first = gaussian_filter(np.sum(Signal_first, axis = 0), self.radius)
+                        Sum_signal_second = gaussian_filter(np.sum(Signal_second, axis = 0) , self.radius)
                         
                         if count%self.show_after == 0:
                             doubleplot(Sum_signal_first, Sum_signal_second, Name + "First Channel Z map", "Second Channel Z map")
