@@ -35,40 +35,41 @@ import cv2
 import pandas as pd
 import imageio
 from dask.array.image import imread as daskread
-
-
+from matplotlib import cm
+from scipy.ndimage.filters import median_filter, gaussian_filter, maximum_filter
 
 class Zmapgen(object):
 
-        def __init__(self, imagedir, savedir, append_name = "_Colored" , fileextension = '*tif', show_after = 1):
+        def __init__(self, imagedir, savedir, append_name = "Mask" , fileextension = '*tif', show_after = 1, radius = 10):
             
             
                self.imagedir = imagedir
                self.savedir = savedir
                self.fileextension = fileextension
+               self.show_after = show_after
+               self.append_name = append_name
+               self.radius = radius
                Path(self.savedir).mkdir(exist_ok=True)
-               
+               self.genmap()
                
         def genmap(self):
                  
                  
                  Raw_path = os.path.join(self.imagedir, self.fileextension)
                  X = glob.glob(Raw_path)
-                 
                  count = 0
                  for fname in X:
-                     
                      Name = os.path.basename(os.path.splitext(fname)[0])
-                     if append_name in Name:
+                     if self.append_name in Name:
                         image = imread(fname)
                         count = count + 1
-                        Signal_first = image[1,:]
-                        Signal_second = image[2,:]
-                     
-                        Sum_signal_first = np.sum(Signal_first, axis = 0)
-                        Sum_signal_second = np.sum(Singal_second, axis = 0)
+                        Signal_first = image[:,:,:,1]
+                        Signal_second = image[:,:,:,2]
+                        Sum_signal_first = gaussian_filter(np.sum(Signal_first, axis = 0), radius)
+                        Sum_signal_second = gaussian_filter(np.sum(Signal_second, axis = 0) , radius)
                         
-                        doubleplot(Sum_signal_first, Sum_signal_second, "First Channel Z map", "Second Channel Z map")
+                        if count%self.show_after == 0:
+                            doubleplot(Sum_signal_first, Sum_signal_second, Name + "First Channel Z map", "Second Channel Z map")
                         
                         imwrite(self.savedir + Name + 'Channel1' + '.tif', Sum_signal_first.astype('uint16'))
                         imwrite(self.savedir + Name + 'Channel2' + '.tif', Sum_signal_second.astype('uint16'))
