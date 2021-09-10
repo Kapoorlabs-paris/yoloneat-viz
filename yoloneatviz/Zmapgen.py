@@ -66,15 +66,28 @@ class Zmapgen(object):
                         Signal_first = image[:,:,:,1]
                         Signal_second = image[:,:,:,2]
                         Sum_signal_first = gaussian_filter(np.sum(Signal_first, axis = 0), self.radius)
+                        Sum_signal_first = normalizeZeroOne(Sum_signal_first)
                         Sum_signal_second = gaussian_filter(np.sum(Signal_second, axis = 0) , self.radius)
+                        
+                        Sum_signal_second = normalizeZeroOne(Sum_signal_second)
                         
                         if count%self.show_after == 0:
                             doubleplot(Sum_signal_first, Sum_signal_second, Name + "First Channel Z map", "Second Channel Z map")
                         
-                        imwrite(self.savedir + Name + 'Channel1' + '.tif', Sum_signal_first.astype('uint16'))
-                        imwrite(self.savedir + Name + 'Channel2' + '.tif', Sum_signal_second.astype('uint16'))
+                        imwrite(self.savedir + Name + 'Channel1' + '.tif', Sum_signal_first)
+                        imwrite(self.savedir + Name + 'Channel2' + '.tif', Sum_signal_second)
                         
-                        
+  
+def normalizeZeroOne(x):
+
+     x = x.astype('float32')
+
+     minVal = np.min(x)
+     maxVal = np.max(x)
+     
+     x = ((x-minVal) / (maxVal - minVal + 1.0e-20))
+     
+     return x                        
                         
 def doubleplot(imageA, imageB, titleA, titleB):
     fig, axes = plt.subplots(1, 2, figsize=(15, 6))
