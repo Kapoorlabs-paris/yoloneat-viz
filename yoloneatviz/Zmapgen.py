@@ -59,7 +59,7 @@ class Zmapgen(object):
                  count = 0
                  for fname in X:
                      Name = os.path.basename(os.path.splitext(fname)[0])
-                     if self.append_name in Name:
+                     if self.append_name in Name and '_Zmap' not in Name:
                         image = imread(fname)
                         count = count + 1
                         Signal_first = image[:,:,:,1]
