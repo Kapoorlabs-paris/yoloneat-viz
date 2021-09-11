@@ -70,11 +70,13 @@ class Zmapgen(object):
                         
                         Sum_signal_second = normalizeZeroOne(Sum_signal_second)
                         
+                        Zmap = np.zeros([Sum_signal_first.shape[0],Sum_signal_first.shape[1],  2])
+                        Zmap[:,:,0] = Sum_signal_first
+                        Zmap[:,:,1] = Sum_signal_second
                         if count%self.show_after == 0:
                             doubleplot(Sum_signal_first, Sum_signal_second, Name + "First Channel Z map", "Second Channel Z map")
                         
-                        imwrite(self.savedir + Name + 'Channel1' + '.tif', Sum_signal_first)
-                        imwrite(self.savedir + Name + 'Channel2' + '.tif', Sum_signal_second)
+                        imwrite(self.savedir + Name + '_Zmap' + '.tif', Zmap)
                         
   
 def normalizeZeroOne(x):
