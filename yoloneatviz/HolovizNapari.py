@@ -24,7 +24,7 @@ from matplotlib.figure import Figure
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QPushButton, QSlider
 import h5py
-import cv2
+from skimage import measure
 import pandas as pd
 import imageio
 from dask.array.image import imread as daskread
@@ -214,15 +214,13 @@ class NEATViz(object):
                     self.image = self.image[0,:]
                 self.viewer.add_image(self.image, name= 'Image' + imagename )
                 
-
-    
-    
+                                                    
                 
                 
 def GetMarkers(image):
     
     
-    MarkerImage = np.zeros(MarkerImage.shape)
+    MarkerImage = np.zeros(image.shape)
     waterproperties = measure.regionprops(image)                
     Coordinates = [prop.centroid for prop in waterproperties]
     Coordinates = sorted(Coordinates , key=lambda k: [k[0], k[1]])

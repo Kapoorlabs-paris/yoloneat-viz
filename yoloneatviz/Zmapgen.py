@@ -31,7 +31,6 @@ from matplotlib.figure import Figure
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QPushButton, QSlider
 import h5py
-import cv2
 import pandas as pd
 import imageio
 from dask.array.image import imread as daskread
