@@ -13,6 +13,7 @@ import os
 import sys
 import numpy as np
 import json
+from scipy import spatial
 from pathlib import Path
 from scipy import spatial
 import itertools
@@ -216,6 +217,50 @@ class NEATViz(object):
                 
                                                     
                 
+def TruePositives(csv_gt, csv_pred, threshold = 10):
+    
+            
+            
+            tp = 0
+            dataset_pred  = pd.read_csv(csv_pred, delimiter = ',')
+            dataset_pred_index = dataset_pred.index
+            
+            T_pred = dataset_pred[dataset_pred.keys()[0]][1:]
+            Y_pred = dataset_pred[dataset_pred.keys()[1]][1:]
+            X_pred = dataset_pred[dataset_pred.keys()[2]][1:]
+            
+            listtime_pred = T_pred.tolist()
+            listy_pred = Y_pred.tolist()
+            listx_pred = X_pred.tolist()
+            location_pred = []
+            for i in range(len(listtime_pred)):
+                
+                location_pred.append([listtime_pred[i], listy_pred[i], listx_pred[i]])
+                
+            tree = spatial.cKDTree(location_pred)
+            
+            
+            dataset_gt  = pd.read_csv(csv_gt, delimiter = ',')
+            dataset_gt_index = dataset_gt.index
+            
+            T_gt = dataset_gt[dataset_gt.keys()[0]][1:]
+            Y_gt = dataset_gt[dataset_gt.keys()[1]][1:]
+            X_gt = dataset_gt[dataset_gt.keys()[2]][1:]
+            
+            listtime_gt = T_gt.tolist()
+            listy_gt = Y_gt.tolist()
+            listx_gt = X_gt.tolist()
+            location_gt = []
+            for i in range(len(listtime_gt)):
+                index = [listtime_gt[i], listy_gt[i], listx_gt[i]]
+                closestpoint = tree.query(index)
+                distance = closestpoint[0]   
+                
+                if distance < threshold:
+                    tp  = tp + 1
+                     
+            return tp/len(listtime_gt)        
+            
                 
 def GetMarkers(image):
     
