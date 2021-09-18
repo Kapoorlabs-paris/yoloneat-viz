@@ -199,7 +199,7 @@ class NEATViz(object):
                              if 'Detections'  in layer.name or layer.name in 'Detections' :
                                         self.viewer.layers.remove(layer) 
             if len(score_locations) > 0:                             
-                   self.viewer.add_points(event_locations, size = size_locations , properties = point_properties, name = 'Detections' + self.event_name, face_color = [0]*4, edge_color = "red", edge_width = 1) 
+                   self.viewer.add_points(event_locations, size = size_locations , properties = point_properties, name = 'Detections' + self.event_name, face_color = [0]*4, edge_color = "red", edge_width = 4) 
 
 
                                      
