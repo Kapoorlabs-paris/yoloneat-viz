@@ -146,6 +146,7 @@ class NEATViz(object):
             self.T = self.dataset[self.dataset.keys()[0]][1:]
             self.Y = self.dataset[self.dataset.keys()[1]][1:]
             self.X = self.dataset[self.dataset.keys()[2]][1:]
+            
             self.Score = self.dataset[self.dataset.keys()[3]][1:]
             self.Size = self.dataset[self.dataset.keys()[4]][1:]
             self.Confidence = self.dataset[self.dataset.keys()[5]][1:]
@@ -217,13 +218,13 @@ class NEATViz(object):
                 
                                                     
                 
-def TruePositives(csv_gt, csv_pred, threshold = 10):
+def TruePositives(csv_gt, csv_pred, thresholdscore = 1 -  1.0E-6,  thresholdspace = 10, thresholdtime = 2):
     
             
             try:
                 
                     tp = 0
-
+                  
 
                     dataset_pred  = pd.read_csv(csv_pred, delimiter = ',')
                     dataset_pred_index = dataset_pred.index
@@ -231,14 +232,18 @@ def TruePositives(csv_gt, csv_pred, threshold = 10):
                     T_pred = dataset_pred[dataset_pred.keys()[0]][1:]
                     Y_pred = dataset_pred[dataset_pred.keys()[1]][1:]
                     X_pred = dataset_pred[dataset_pred.keys()[2]][1:]
-
+                    Score_pred = dataset_pred[dataset_pred.keys()[3]][1:]
+                    
+                    
                     listtime_pred = T_pred.tolist()
                     listy_pred = Y_pred.tolist()
                     listx_pred = X_pred.tolist()
+                    listscore_pred = Score_pred.tolist()
                     location_pred = []
                     for i in range(len(listtime_pred)):
 
-                        location_pred.append([listtime_pred[i], listy_pred[i], listx_pred[i]])
+                        if listscore_pred[i] > thresholdscore:   
+                            location_pred.append([listtime_pred[i], listy_pred[i], listx_pred[i]])
 
                     tree = spatial.cKDTree(location_pred)
 
@@ -255,19 +260,94 @@ def TruePositives(csv_gt, csv_pred, threshold = 10):
                     listx_gt = X_gt.tolist()
                     location_gt = []
                     for i in range(len(listtime_gt)):
-                        index = [listtime_gt[i], listy_gt[i], listx_gt[i]]
+                        index = [float(listtime_gt[i]), float(listy_gt[i]), float(listx_gt[i])]
                         closestpoint = tree.query(index)
-                        distance = closestpoint[0]   
-
-                        if distance < threshold:
+                        spacedistance, timedistance = TimedDistance(index, location_pred[closestpoint[1]])
+                        
+                        if spacedistance < thresholdspace and timedistance < thresholdtime:
                             tp  = tp + 1
-
-                    return tp/len(listtime_gt) * 100
+                    
+                    fp = FalsePositives(csv_pred, csv_gt, thresholdscore = thresholdscore, thresholdspace = thresholdspace, thresholdtime = thresholdtime)
+                    return tp/len(listtime_gt) * 100, fp/len(listtime_pred) * 100
                 
             except:
                  
                  return 'File not found'
                  pass
+             
+                
+def FalsePositives(csv_pred, csv_gt, thresholdscore = 1 -  1.0E-6, thresholdspace = 10, thresholdtime = 2):
+    
+            
+            try:
+                
+                    fp = 0
+                  
+
+                    dataset_pred  = pd.read_csv(csv_pred, delimiter = ',')
+                    dataset_pred_index = dataset_pred.index
+
+                    T_pred = dataset_pred[dataset_pred.keys()[0]][1:]
+                    Y_pred = dataset_pred[dataset_pred.keys()[1]][1:]
+                    X_pred = dataset_pred[dataset_pred.keys()[2]][1:]
+                    Score_pred = dataset_pred[dataset_pred.keys()[3]][1:]
+                    
+                    listtime_pred = T_pred.tolist()
+                    listy_pred = Y_pred.tolist()
+                    listx_pred = X_pred.tolist()
+                    listscore_pred = Score_pred.tolist()
+                    location_pred = []
+                    for i in range(len(listtime_pred)):
+                        
+                        
+                        if listscore_pred[i] > thresholdscore:
+                           location_pred.append([listtime_pred[i], listy_pred[i], listx_pred[i]])
+
+                    tree = spatial.cKDTree(location_pred)
+
+
+                    dataset_gt  = pd.read_csv(csv_gt, delimiter = ',')
+                    dataset_gt_index = dataset_gt.index
+
+                    T_gt = dataset_gt[dataset_gt.keys()[0]][1:]
+                    Y_gt = dataset_gt[dataset_gt.keys()[1]][1:]
+                    X_gt = dataset_gt[dataset_gt.keys()[2]][1:]
+
+                    listtime_gt = T_gt.tolist()
+                    listy_gt = Y_gt.tolist()
+                    listx_gt = X_gt.tolist()
+                    location_gt = []
+                    for i in range(len(listtime_gt)):
+                        index = [float(listtime_gt[i]), float(listy_gt[i]), float(listx_gt[i])]
+                        closestpoint = tree.query(index)
+                        spacedistance, timedistance = TimedDistance(index, location_pred[closestpoint[1]])
+
+                        if spacedistance < thresholdspace and timedistance < thresholdtime:
+                            fp  = fp + 1
+
+                    
+
+
+                    return fp/len(listtime_gt) * 100
+                
+            except:
+                 
+                 return 'File not found'
+                 pass             
+                
+                
+ 
+def TimedDistance(pointA, pointB):
+
+    
+     spacedistance = float(np.sqrt( (pointA[1] - pointB[1] ) * (pointA[1] - pointB[1] ) + (pointA[2] - pointB[2] ) * (pointA[2] - pointB[2] )  ))
+     
+     timedistance = float(np.abs(pointA[0] - pointB[0]))
+     
+     
+     return spacedistance, timedistance
+                
+                
 def GetMarkers(image):
     
     
