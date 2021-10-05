@@ -324,14 +324,14 @@ def PatchGenerator(image,resultsdir,csv_gt,number_patches, patch_shape, size_tmi
                         time = int(float(listtime_gt[i])) - 1
                         y = float(listy_gt[i])
                         x = float(listx_gt[i])
-                        Data.append([time, y * DownsampleFactor, x * DownsampleFactor])
+                        
                         if x > 0.25 * image.shape[2] and x < 0.75* image.shape[2] and y > 0.25 * image.shape[1] and y < 0.75* image.shape[1]:
                                 crop_Xminus = x - int(patch_shape[0] / 2)
                                 crop_Xplus = x + int(patch_shape[0] / 2)
                                 crop_Yminus = y - int(patch_shape[1] / 2)
                                 crop_Yplus = y + int(patch_shape[1] / 2)
 
-
+                          
                                 randomy = np.random.randint(min(0.25 * image.shape[2],0.25 * image.shape[1]), high=max(0.25 * image.shape[2],0.25 * image.shape[1]))
                                 randomx = np.random.randint(min(0.25 * image.shape[2],0.25 * image.shape[1]), high=max(0.25 * image.shape[2],0.25 * image.shape[1]))
                                 random_crop_Xminus = randomx - int(patch_shape[0] / 2)
@@ -349,11 +349,11 @@ def PatchGenerator(image,resultsdir,csv_gt,number_patches, patch_shape, size_tmi
                                 crop_image = image[region] 
                                 random_crop_image = image[random_region]
                                 if(crop_image.shape[0] == size_tplus + size_tminus + 1 and crop_image.shape[1]== patch_shape[1] and crop_image.shape[2]== patch_shape[0]):
-
+                                      Data.append([time, y * DownsampleFactor, x * DownsampleFactor])
                                       imwrite(resultsdir + 'Skeletor' + 'T' +  str(time) + 'Y' + str(y*DownsampleFactor) + 'X' + str(x*DownsampleFactor) + '.tif', crop_image.astype('float16'),metadata={'axes': 'TYX'})                
                                 count = count + 1        
                                 if(random_crop_image.shape[0] == size_tplus + size_tminus + 1 and random_crop_image.shape[1]== patch_shape[1] and random_crop_image.shape[2]== patch_shape[0]):
-
+                                      Data.append([time, randomy * DownsampleFactor, randomx * DownsampleFactor])
                                       imwrite(resultsdir + 'Skeletor' + 'T' + str(time) + 'Y' + str(randomy*DownsampleFactor) + 'X' + str(randomx*DownsampleFactor) + '.tif', random_crop_image.astype('float16'),metadata={'axes': 'TYX'})
                                 count = count + 1 
                     
