@@ -11,6 +11,7 @@ import napari
 import glob
 import os
 import cv2
+import random
 import sys
 import numpy as np
 import json
@@ -302,12 +303,15 @@ def PatchGenerator(image,resultsdir,csv_gt,number_patches, patch_shape, size_tmi
     
                     image = DownsampleData(image, DownsampleFactor)
                     dataset_gt  = pd.read_csv(csv_gt, delimiter = ',')
+            
+                    dataset_gt = dataset_gt.sample(frac = 1)
                     dataset_gt_index = dataset_gt.index
                     T_gt = dataset_gt[dataset_gt.keys()[0]][1:]
                     Y_gt = dataset_gt[dataset_gt.keys()[1]][1:]/DownsampleFactor
                     X_gt = dataset_gt[dataset_gt.keys()[2]][1:]/DownsampleFactor
 
                     listtime_gt = T_gt.tolist()
+                    
                     listy_gt = Y_gt.tolist()
                     listx_gt = X_gt.tolist()
                     location_gt = []
@@ -315,21 +319,21 @@ def PatchGenerator(image,resultsdir,csv_gt,number_patches, patch_shape, size_tmi
                     count = 0
                     Data = []
                     for i in range(len(listtime_gt)):
-                        if count > number_patches:
+                        if count >  2 * number_patches:
                             break
-                        time = int(float(listtime_gt[i]))
+                        time = int(float(listtime_gt[i])) - 1
                         y = float(listy_gt[i])
                         x = float(listx_gt[i])
                         Data.append([time, y * DownsampleFactor, x * DownsampleFactor])
-                        if x > 50 and x < image.shape[2] - 50 and y > 50 and y < image.shape[1] - 50 :
+                        if x > 0.25 * image.shape[2] and x < 0.75* image.shape[2] and y > 0.25 * image.shape[1] and y < 0.75* image.shape[1]:
                                 crop_Xminus = x - int(patch_shape[0] / 2)
                                 crop_Xplus = x + int(patch_shape[0] / 2)
                                 crop_Yminus = y - int(patch_shape[1] / 2)
                                 crop_Yplus = y + int(patch_shape[1] / 2)
 
 
-                                randomy = np.random.randint(50, high=image.shape[0])
-                                randomx = np.random.randint(50, high=image.shape[1])
+                                randomy = np.random.randint(min(0.25 * image.shape[2],0.25 * image.shape[1]), high=max(0.25 * image.shape[2],0.25 * image.shape[1]))
+                                randomx = np.random.randint(min(0.25 * image.shape[2],0.25 * image.shape[1]), high=max(0.25 * image.shape[2],0.25 * image.shape[1]))
                                 random_crop_Xminus = randomx - int(patch_shape[0] / 2)
                                 random_crop_Xplus = randomx + int(patch_shape[0] / 2)
                                 random_crop_Yminus = randomy - int(patch_shape[1] / 2)
@@ -346,14 +350,15 @@ def PatchGenerator(image,resultsdir,csv_gt,number_patches, patch_shape, size_tmi
                                 random_crop_image = image[random_region]
                                 if(crop_image.shape[0] == size_tplus + size_tminus + 1 and crop_image.shape[1]== patch_shape[1] and crop_image.shape[2]== patch_shape[0]):
 
-                                      imwrite(resultsdir + 'Testing' + str(i) + '.tif', crop_image.astype('float16'))
+                                      imwrite(resultsdir + 'Testing' + str(count) + '.tif', crop_image.astype('float16'),metadata={'axes': 'TYX'})                
+                                count = count + 1        
                                 if(random_crop_image.shape[0] == size_tplus + size_tminus + 1 and random_crop_image.shape[1]== patch_shape[1] and random_crop_image.shape[2]== patch_shape[0]):
 
-                                      imwrite(resultsdir + 'Testing' + str(i) + str('j') + '.tif', random_crop_image.astype('float16'))
+                                      imwrite(resultsdir + 'Testing' + str(count) + '.tif', random_crop_image.astype('float16'),metadata={'axes': 'TYX'})
                                 count = count + 1 
                     
                     writer = csv.writer(open(resultsdir + '/' + ('GTLocator') + ".csv", "w"))
-                    writer.writerows(Event_data)
+                    writer.writerows(Data)
                     
                     
 def FalsePositives(csv_pred, csv_gt, thresholdscore = 1 -  1.0E-6, thresholdspace = 10, thresholdtime = 2):
