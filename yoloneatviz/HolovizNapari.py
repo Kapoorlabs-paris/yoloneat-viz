@@ -312,39 +312,50 @@ def PatchGenerator(image,resultsdir,csv_gt,number_patches, patch_shape, size_tmi
                     listx_gt = X_gt.tolist()
                     location_gt = []
                     fp = len(listtime_gt)
+                    count = 0
+                    Data = []
                     for i in range(len(listtime_gt)):
-                        if i > number_patches:
+                        if count > number_patches:
                             break
                         time = int(float(listtime_gt[i]))
                         y = float(listy_gt[i])
                         x = float(listx_gt[i])
-                        crop_Xminus = x - int(patch_shape[0] / 2)
-                        crop_Xplus = x + int(patch_shape[0] / 2)
-                        crop_Yminus = y - int(patch_shape[1] / 2)
-                        crop_Yplus = y + int(patch_shape[1] / 2)
-                        currentimage = image[time,:]
-                        region = (slice(int(crop_Yminus), int(crop_Yplus)),
-                                  slice(int(crop_Xminus), int(crop_Xplus)))
-                        randomy = np.random.randint(50, high=image.shape[0])
-                        randomx = np.random.randint(50, high=image.shape[1])
-                        random_crop_Xminus = randomx - int(patch_shape[0] / 2)
-                        random_crop_Xplus = randomx + int(patch_shape[0] / 2)
-                        random_crop_Yminus = randomy - int(patch_shape[1] / 2)
-                        random_crop_Yplus = randomy + int(patch_shape[1] / 2)
-                      
-                        region = (slice(int(time - size_tminus),int(time + size_tplus  + 1)),slice(int(crop_Yminus), int(crop_Yplus)),
-                                  slice(int(crop_Xminus), int(crop_Xplus)))
-                        random_region = (slice(int(time - size_tminus),int(time + size_tplus  + 1)),slice(int(random_crop_Yminus), int(random_crop_Yplus)),
-                                  slice(int(random_crop_Xminus), int(random_crop_Xplus)))
-                        try:
-                          crop_image = image[region] 
-                          imwrite(resultsdir + 'Testing' + str(i) + '.tif', crop_image.astype('float32'))
-                          
-                          random_crop_image = image[random_region] 
-                          imwrite(resultsdir + 'Testing' + str(i) + str(i) + '.tif', random_crop_image.astype('float32'))
-                                       
-                        except:
-                            continue
+                        Data.append([time, y * DownsampleFactor, x * DownsampleFactor])
+                        if x > 50 and x < image.shape[2] - 50 and y > 50 and y < image.shape[1] - 50 :
+                                crop_Xminus = x - int(patch_shape[0] / 2)
+                                crop_Xplus = x + int(patch_shape[0] / 2)
+                                crop_Yminus = y - int(patch_shape[1] / 2)
+                                crop_Yplus = y + int(patch_shape[1] / 2)
+
+
+                                randomy = np.random.randint(50, high=image.shape[0])
+                                randomx = np.random.randint(50, high=image.shape[1])
+                                random_crop_Xminus = randomx - int(patch_shape[0] / 2)
+                                random_crop_Xplus = randomx + int(patch_shape[0] / 2)
+                                random_crop_Yminus = randomy - int(patch_shape[1] / 2)
+                                random_crop_Yplus = randomy + int(patch_shape[1] / 2)
+
+                                region = (slice(int(time - size_tminus),int(time + size_tplus  + 1)),slice(int(crop_Yminus), int(crop_Yplus)),
+                                          slice(int(crop_Xminus), int(crop_Xplus)))
+
+                                random_region = (slice(int(time - size_tminus),int(time + size_tplus  + 1)),slice(int(random_crop_Yminus), int(random_crop_Yplus)),
+                                          slice(int(random_crop_Xminus), int(random_crop_Xplus)))
+
+
+                                crop_image = image[region] 
+                                random_crop_image = image[random_region]
+                                if(crop_image.shape[0] == size_tplus + size_tminus + 1 and crop_image.shape[1]== patch_shape[1] and crop_image.shape[2]== patch_shape[0]):
+
+                                      imwrite(resultsdir + 'Testing' + str(i) + '.tif', crop_image.astype('float16'))
+                                if(random_crop_image.shape[0] == size_tplus + size_tminus + 1 and random_crop_image.shape[1]== patch_shape[1] and random_crop_image.shape[2]== patch_shape[0]):
+
+                                      imwrite(resultsdir + 'Testing' + str(i) + str('j') + '.tif', random_crop_image.astype('float16'))
+                                count = count + 1 
+                    
+                    writer = csv.writer(open(resultsdir + '/' + ('GTLocator') + ".csv", "w"))
+                    writer.writerows(Event_data)
+                    
+                    
 def FalsePositives(csv_pred, csv_gt, thresholdscore = 1 -  1.0E-6, thresholdspace = 10, thresholdtime = 2):
     
             
