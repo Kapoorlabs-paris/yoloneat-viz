@@ -350,11 +350,11 @@ def PatchGenerator(image,resultsdir,csv_gt,number_patches, patch_shape, size_tmi
                                 random_crop_image = image[random_region]
                                 if(crop_image.shape[0] == size_tplus + size_tminus + 1 and crop_image.shape[1]== patch_shape[1] and crop_image.shape[2]== patch_shape[0]):
 
-                                      imwrite(resultsdir + 'Testing' + str(count) + '.tif', crop_image.astype('float16'),metadata={'axes': 'TYX'})                
+                                      imwrite(resultsdir + 'Skeletor' + 'T' +  str(time) + 'Y' + str(y*DownsampleFactor) + 'X' + str(x*DownsampleFactor) + '.tif', crop_image.astype('float16'),metadata={'axes': 'TYX'})                
                                 count = count + 1        
                                 if(random_crop_image.shape[0] == size_tplus + size_tminus + 1 and random_crop_image.shape[1]== patch_shape[1] and random_crop_image.shape[2]== patch_shape[0]):
 
-                                      imwrite(resultsdir + 'Testing' + str(count) + '.tif', random_crop_image.astype('float16'),metadata={'axes': 'TYX'})
+                                      imwrite(resultsdir + 'Skeletor' + 'T' + str(time) + 'Y' + str(randomy*DownsampleFactor) + 'X' + str(randomx*DownsampleFactor) + '.tif', random_crop_image.astype('float16'),metadata={'axes': 'TYX'})
                                 count = count + 1 
                     
                     writer = csv.writer(open(resultsdir + '/' + ('GTLocator') + ".csv", "w"))
