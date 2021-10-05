@@ -10,6 +10,7 @@ import csv
 import napari
 import glob
 import os
+import cv2
 import sys
 import numpy as np
 import json
@@ -260,6 +261,7 @@ def TruePositives(csv_gt, csv_pred, thresholdscore = 1 -  1.0E-6,  thresholdspac
                     listx_gt = X_gt.tolist()
                     location_gt = []
                     for i in range(len(listtime_gt)):
+                        
                         index = [float(listtime_gt[i]), float(listy_gt[i]), float(listx_gt[i])]
                         closestpoint = tree.query(index)
                         spacedistance, timedistance = TimedDistance(index, location_pred[closestpoint[1]])
@@ -268,20 +270,87 @@ def TruePositives(csv_gt, csv_pred, thresholdscore = 1 -  1.0E-6,  thresholdspac
                             tp  = tp + 1
                     
                     fp = FalsePositives(csv_pred, csv_gt, thresholdscore = thresholdscore, thresholdspace = thresholdspace, thresholdtime = thresholdtime)
-                    return tp/len(listtime_gt) * 100, fp/len(listtime_pred) * 100
+                    return tp/len(listtime_gt) * 100, fp
                 
             except:
                  
                  return 'File not found'
                  pass
-             
+
+ 
+def DownsampleData(image, DownsampleFactor):
+                    
+                    if DownsampleFactor!=1:  
+                  
+                        print('Downsampling Image in XY by', DownsampleFactor)
+                        scale_percent = int(100/DownsampleFactor) # percent of original size
+                        width = int(image.shape[2] * scale_percent / 100)
+                        height = int(image.shape[1] * scale_percent / 100)
+                        dim = (width, height)
+                        smallimage = np.zeros([image.shape[0],  height,width])
+                        for i in range(0, image.shape[0]):
+                              # resize image
+                              smallimage[i,:] = cv2.resize(image[i,:].astype('float32'), dim)         
+
+                        return smallimage
+                    else:
+
+                        return image
                 
+def PatchGenerator(image,resultsdir,csv_gt,number_patches, patch_shape, size_tminus,size_tplus,DownsampleFactor = 1 ):
+    
+    
+                    image = DownsampleData(image, DownsampleFactor)
+                    dataset_gt  = pd.read_csv(csv_gt, delimiter = ',')
+                    dataset_gt_index = dataset_gt.index
+                    T_gt = dataset_gt[dataset_gt.keys()[0]][1:]
+                    Y_gt = dataset_gt[dataset_gt.keys()[1]][1:]/DownsampleFactor
+                    X_gt = dataset_gt[dataset_gt.keys()[2]][1:]/DownsampleFactor
+
+                    listtime_gt = T_gt.tolist()
+                    listy_gt = Y_gt.tolist()
+                    listx_gt = X_gt.tolist()
+                    location_gt = []
+                    fp = len(listtime_gt)
+                    for i in range(len(listtime_gt)):
+                        if i > number_patches:
+                            break
+                        time = int(float(listtime_gt[i]))
+                        y = float(listy_gt[i])
+                        x = float(listx_gt[i])
+                        crop_Xminus = x - int(patch_shape[0] / 2)
+                        crop_Xplus = x + int(patch_shape[0] / 2)
+                        crop_Yminus = y - int(patch_shape[1] / 2)
+                        crop_Yplus = y + int(patch_shape[1] / 2)
+                        currentimage = image[time,:]
+                        region = (slice(int(crop_Yminus), int(crop_Yplus)),
+                                  slice(int(crop_Xminus), int(crop_Xplus)))
+                        randomy = np.random.randint(50, high=image.shape[0])
+                        randomx = np.random.randint(50, high=image.shape[1])
+                        random_crop_Xminus = randomx - int(patch_shape[0] / 2)
+                        random_crop_Xplus = randomx + int(patch_shape[0] / 2)
+                        random_crop_Yminus = randomy - int(patch_shape[1] / 2)
+                        random_crop_Yplus = randomy + int(patch_shape[1] / 2)
+                      
+                        region = (slice(int(time - size_tminus),int(time + size_tplus  + 1)),slice(int(crop_Yminus), int(crop_Yplus)),
+                                  slice(int(crop_Xminus), int(crop_Xplus)))
+                        random_region = (slice(int(time - size_tminus),int(time + size_tplus  + 1)),slice(int(random_crop_Yminus), int(random_crop_Yplus)),
+                                  slice(int(random_crop_Xminus), int(random_crop_Xplus)))
+                        try:
+                          crop_image = image[region] 
+                          imwrite(resultsdir + 'Testing' + str(i) + '.tif', crop_image.astype('float32'))
+                          
+                          random_crop_image = image[random_region] 
+                          imwrite(resultsdir + 'Testing' + str(i) + str(i) + '.tif', random_crop_image.astype('float32'))
+                                       
+                        except:
+                            continue
 def FalsePositives(csv_pred, csv_gt, thresholdscore = 1 -  1.0E-6, thresholdspace = 10, thresholdtime = 2):
     
             
             try:
                 
-                    fp = 0
+                    
                   
 
                     dataset_pred  = pd.read_csv(csv_pred, delimiter = ',')
@@ -317,15 +386,17 @@ def FalsePositives(csv_pred, csv_gt, thresholdscore = 1 -  1.0E-6, thresholdspac
                     listy_gt = Y_gt.tolist()
                     listx_gt = X_gt.tolist()
                     location_gt = []
+                    fp = len(listtime_gt)
                     for i in range(len(listtime_gt)):
+                        
                         index = [float(listtime_gt[i]), float(listy_gt[i]), float(listx_gt[i])]
                         closestpoint = tree.query(index)
                         spacedistance, timedistance = TimedDistance(index, location_pred[closestpoint[1]])
 
                         if spacedistance < thresholdspace and timedistance < thresholdtime:
-                            fp  = fp + 1
+                            fp  = fp - 1
 
-                    
+                            
 
 
                     return fp/len(listtime_gt) * 100
