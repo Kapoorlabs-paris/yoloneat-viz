@@ -217,12 +217,12 @@ class NEATViz(object):
                                                     self.viewer.layers.remove(layer)
                 self.image = daskread(image_toread)
                 
-                self.heat_image = daskread(self.imagedir + imagename + heatname + '.tif')
+                self.heat_image = daskread(self.heatmapdir + imagename + self.heatname + '.tif')
                 
                 if len(self.image.shape) > 3:
                     self.image = self.image[0,:]
                 self.viewer.add_image(self.image, name= 'Image' + imagename )
-                self.viewer.add_labels(self.heat_image, name= 'Image' + imagename + heatname )
+                self.viewer.add_labels(self.heat_image, name= 'Image' + imagename + self.heatname )
                                                     
                 
 def TruePositives(csv_gt, csv_pred, thresholdscore = 1 -  1.0E-6,  thresholdspace = 10, thresholdtime = 2):
