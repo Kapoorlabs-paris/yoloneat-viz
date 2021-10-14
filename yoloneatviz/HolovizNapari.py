@@ -28,8 +28,10 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QPushButton, QSlider
 import h5py
 from skimage import measure
+from scipy.ndimage import gaussian_filter
 import pandas as pd
 import imageio
+from .napari_animation import AnimationWidget
 from dask.array.image import imread as daskread
 Boxname = 'ImageIDBox'
 EventBoxname = 'EventIDBox'
@@ -37,7 +39,7 @@ EventBoxname = 'EventIDBox'
 
 class NEATViz(object):
 
-        def __init__(self, imagedir, heatmapimagedir, savedir, categories_json, event_threshold, heatname = '_Heat', fileextension = '*tif'):
+        def __init__(self, imagedir, heatmapimagedir, savedir, categories_json, event_threshold, heatname = '_Heat', fileextension = '*tif', blur_radius = 5):
             
             
                self.imagedir = imagedir
@@ -47,6 +49,7 @@ class NEATViz(object):
                self.event_threshold = event_threshold
                self.categories_json = categories_json
                self.fileextension = fileextension
+               self.blur_radius = blur_radius
                Path(self.savedir).mkdir(exist_ok=True)
                self.viewer = napari.Viewer()
                self.time = 0
@@ -82,7 +85,7 @@ class NEATViz(object):
                     
                  imageidbox = QComboBox()   
                  imageidbox.addItem(Boxname)   
-                 detectionsavebutton = QPushButton(' Save Clicks')
+                 detectionsavebutton = QPushButton('Save Clicks')
                  
                  for i in range(0, len(Imageids)):
                      
@@ -120,7 +123,6 @@ class NEATViz(object):
             )            
                  
                     
-                 
                  self.viewer.window.add_dock_widget(imageidbox, name="Image", area='left') 
                  self.viewer.window.add_dock_widget(eventidbox, name="Event", area='left')  
                  
@@ -130,6 +132,9 @@ class NEATViz(object):
             
             
             self.event_name = csv_event_name
+            animation_widget = AnimationWidget(self.viewer, self.savedir, imagename + csv_event_name, 0, self.image.shape[0])
+            self.viewer.window.add_dock_widget(animation_widget, area='right')
+            self.viewer.update_console({'animation': animation_widget.animation})
             
             for (event_name,event_label) in self.key_categories.items():
                                 
@@ -215,14 +220,18 @@ class NEATViz(object):
                 for layer in list(self.viewer.layers):
                                          if 'Image' in layer.name or layer.name in 'Image':
                                                     self.viewer.layers.remove(layer)
-                self.image = daskread(image_toread)
+                                                    
+                                                    
+                self.image = imread(image_toread)
                 
-                self.heat_image = daskread(self.heatmapdir + imagename + self.heatname + '.tif')
+                self.heat_image = imread(self.heatmapimagedir + imagename + self.heatname + '.tif')
+                
+               
                 
                 if len(self.image.shape) > 3:
                     self.image = self.image[0,:]
                 self.viewer.add_image(self.image, name= 'Image' + imagename )
-                self.viewer.add_labels(self.heat_image, name= 'Image' + imagename + self.heatname )
+                self.viewer.add_image(self.heat_image, name= 'Image' + imagename + self.heatname )
                                                     
                 
 def TruePositives(csv_gt, csv_pred, thresholdscore = 1 -  1.0E-6,  thresholdspace = 10, thresholdtime = 2):
