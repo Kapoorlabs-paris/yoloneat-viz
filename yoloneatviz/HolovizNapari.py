@@ -284,8 +284,9 @@ def TruePositives(csv_gt, csv_pred, thresholdscore = 1 -  1.0E-6,  thresholdspac
                         if spacedistance < thresholdspace and timedistance < thresholdtime:
                             tp  = tp + 1
                     
+                    fn = FalseNegatives(csv_pred, csv_gt, thresholdscore = thresholdscore, thresholdspace = thresholdspace, thresholdtime = thresholdtime)
                     fp = FalsePositives(csv_pred, csv_gt, thresholdscore = thresholdscore, thresholdspace = thresholdspace, thresholdtime = thresholdtime)
-                    return tp/len(listtime_gt) * 100, fp
+                    return tp/len(listtime_gt) * 100, fn, fp
                 
             except:
                  
@@ -329,7 +330,7 @@ def PatchGenerator(image,resultsdir,csv_gt,number_patches, patch_shape, size_tmi
                     listy_gt = Y_gt.tolist()
                     listx_gt = X_gt.tolist()
                     location_gt = []
-                    fp = len(listtime_gt)
+                    fn = len(listtime_gt)
                     count = 0
                     Data = []
                     for i in range(len(listtime_gt)):
@@ -375,7 +376,7 @@ def PatchGenerator(image,resultsdir,csv_gt,number_patches, patch_shape, size_tmi
                     writer.writerows(Data)
                     
                     
-def FalsePositives(csv_pred, csv_gt, thresholdscore = 1 -  1.0E-6, thresholdspace = 10, thresholdtime = 2):
+def FalseNegatives(csv_pred, csv_gt, thresholdscore = 1 -  1.0E-6, thresholdspace = 10, thresholdtime = 2):
     
             
             try:
@@ -416,12 +417,74 @@ def FalsePositives(csv_pred, csv_gt, thresholdscore = 1 -  1.0E-6, thresholdspac
                     listy_gt = Y_gt.tolist()
                     listx_gt = X_gt.tolist()
                     location_gt = []
-                    fp = len(listtime_gt)
+                    fn = len(listtime_gt)
                     for i in range(len(listtime_gt)):
                         
                         index = [float(listtime_gt[i]), float(listy_gt[i]), float(listx_gt[i])]
                         closestpoint = tree.query(index)
                         spacedistance, timedistance = TimedDistance(index, location_pred[closestpoint[1]])
+
+                        if spacedistance < thresholdspace and timedistance < thresholdtime:
+                            fn  = fn - 1
+
+                            
+
+
+                    return fn/len(listtime_gt) * 100
+                
+            except:
+                 
+                 return 'File not found'
+                 pass             
+                
+def FalsePositives(csv_pred, csv_gt, thresholdscore = 1 -  1.0E-6, thresholdspace = 10, thresholdtime = 2):
+    
+            
+            try:
+                
+                    
+                  
+
+                    dataset_pred  = pd.read_csv(csv_pred, delimiter = ',')
+                    dataset_pred_index = dataset_pred.index
+
+                    T_pred = dataset_pred[dataset_pred.keys()[0]][1:]
+                    Y_pred = dataset_pred[dataset_pred.keys()[1]][1:]
+                    X_pred = dataset_pred[dataset_pred.keys()[2]][1:]
+                    Score_pred = dataset_pred[dataset_pred.keys()[3]][1:]
+                    
+                    listtime_pred = T_pred.tolist()
+                    listy_pred = Y_pred.tolist()
+                    listx_pred = X_pred.tolist()
+                    listscore_pred = Score_pred.tolist()
+                    location_pred = []
+                    
+
+
+                    dataset_gt  = pd.read_csv(csv_gt, delimiter = ',')
+                    dataset_gt_index = dataset_gt.index
+
+                    T_gt = dataset_gt[dataset_gt.keys()[0]][1:]
+                    Y_gt = dataset_gt[dataset_gt.keys()[1]][1:]
+                    X_gt = dataset_gt[dataset_gt.keys()[2]][1:]
+
+                    listtime_gt = T_gt.tolist()
+                    listy_gt = Y_gt.tolist()
+                    listx_gt = X_gt.tolist()
+                    location_gt = []
+                    fp = len(listtime_pred)
+                    
+                    for i in range(len(listtime_gt)):
+                        
+                     
+                           location_gt.append([listtime_gt[i], listy_gt[i], listx_gt[i]])
+
+                    tree = spatial.cKDTree(location_gt)
+                    for i in range(len(listtime_pred)):
+                        
+                        index = [float(listtime_pred[i]), float(listy_pred[i]), float(listx_pred[i])]
+                        closestpoint = tree.query(index)
+                        spacedistance, timedistance = TimedDistance(index, location_gt[closestpoint[1]])
 
                         if spacedistance < thresholdspace and timedistance < thresholdtime:
                             fp  = fp - 1
@@ -435,8 +498,7 @@ def FalsePositives(csv_pred, csv_gt, thresholdscore = 1 -  1.0E-6, thresholdspac
                  
                  return 'File not found'
                  pass             
-                
-                
+                                
  
 def TimedDistance(pointA, pointB):
 
