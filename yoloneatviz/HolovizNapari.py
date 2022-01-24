@@ -204,13 +204,20 @@ class NEATViz(object):
                          size_locations.append(size)
                          score_locations.append(score)
             point_properties = {'score' : np.array(score_locations)}    
+            text_properties = {
+            'text': self.event_name +': {score:.4f}',
+            'anchor': 'upper_left',
+            'translation': [-5, 0],
+            'size': 12,
+            'color': 'pink',
+        }
             for layer in list(self.viewer.layers):
                               
                              if 'Detections'  in layer.name or layer.name in 'Detections' :
                                         self.viewer.layers.remove(layer) 
             if len(score_locations) > 0:                             
-                   self.viewer.add_points(event_locations, size = size_locations , properties = point_properties, name = 'Detections' + self.event_name, face_color = [0]*4, edge_color = "red", edge_width = 4) 
-
+                   self.viewer.add_points(event_locations, size = size_locations , properties = point_properties, text = text_properties,  name = 'Detections' + self.event_name, face_color = [0]*4, edge_color = "red", edge_width = 4) 
+                   
 
                                      
                                         
