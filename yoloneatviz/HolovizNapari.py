@@ -156,25 +156,35 @@ class NEATViz(object):
             self.Y = self.dataset[self.dataset.keys()[1]][1:]
             self.X = self.dataset[self.dataset.keys()[2]][1:]
             
-            self.Score = self.dataset[self.dataset.keys()[3]][1:]
-            self.Size = self.dataset[self.dataset.keys()[4]][1:]
-            self.Confidence = self.dataset[self.dataset.keys()[5]][1:]
+            try:
+                    self.Score = self.dataset[self.dataset.keys()[3]][1:]
+                    self.Size = self.dataset[self.dataset.keys()[4]][1:]
+                    self.Confidence = self.dataset[self.dataset.keys()[5]][1:]
             
+            except:
+                
+                self.Score = self.T
+                self.Size = self.Y
+                self.Confidence = self.X
             
             timelist = []
             eventlist= []
             for i in range(0, self.image.shape[0]):
                 
                 currentT   = np.round(self.dataset["T"]).astype('int')
-                currentScore = self.dataset["Score"]
-                condition = currentT == i
-                condition_indices = self.dataset_index[condition]
-                conditionScore = currentScore[condition_indices]
-                score_condition = conditionScore > self.event_threshold[self.event_label]
+                try:
+                   currentScore = self.dataset["Score"]
+                   condition = currentT == i
+                   condition_indices = self.dataset_index[condition]
+                   conditionScore = currentScore[condition_indices]
+                   score_condition = conditionScore > self.event_threshold[self.event_label]
                 
-                countT = len(conditionScore[score_condition])
-                timelist.append(i)
-                eventlist.append(countT)
+                   countT = len(conditionScore[score_condition])
+                   timelist.append(i)
+                   eventlist.append(countT)
+                except:
+                    currentScore = 1
+                
             self.ax.plot(timelist, eventlist, '-r')
             self.ax.set_title(self.event_name + "Events")
             self.ax.set_xlabel("Time")
@@ -186,6 +196,7 @@ class NEATViz(object):
             listtime = self.T.tolist()
             listy = self.Y.tolist()
             listx = self.X.tolist()
+            
             listsize = self.Size.tolist()
             listscore = self.Score.tolist()
             event_locations = []
@@ -230,15 +241,16 @@ class NEATViz(object):
                                                     
                                                     
                 self.image = imread(image_toread)
-                
-                self.heat_image = imread(self.heatmapimagedir + imagename + self.heatname + '.tif')
+                if self.heatmapimagedir is not None:
+                     self.heat_image = imread(self.heatmapimagedir + imagename + self.heatname + '.tif')
                 
                
                 
                 if len(self.image.shape) > 3:
                     self.image = self.image[0,:]
                 self.viewer.add_image(self.image, name= 'Image' + imagename )
-                self.viewer.add_image(self.heat_image, name= 'Image' + imagename + self.heatname )
+                if self.heatmapimagedir is not None:
+                     self.viewer.add_image(self.heat_image, name= 'Image' + imagename + self.heatname )
                                                     
                 
 def TruePositives(csv_gt, csv_pred, thresholdscore = 1 -  1.0E-6,  thresholdspace = 10, thresholdtime = 2):
@@ -499,7 +511,7 @@ def FalsePositives(csv_pred, csv_gt, thresholdscore = 1 -  1.0E-6, thresholdspac
                             
 
 
-                    return fp/len(listtime_gt) * 100
+                    return fp/len(listtime_pred) * 100
                 
             except:
                  
